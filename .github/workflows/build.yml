@@ -33,6 +33,10 @@ jobs:
         run: |
           MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
           
+          # Create res/xml directory and file_paths.xml
+          mkdir -p android/app/src/main/res/xml
+          echo '<?xml version="1.0" encoding="utf-8"?><paths xmlns:android="http://schemas.android.com/apk/res/android"><external-path name="external_files" path="."/><cache-path name="cache_files" path="."/><files-path name="files" path="."/></paths>' > android/app/src/main/res/xml/file_paths.xml
+
           # 1. Define segments to insert
           PERMISSIONS="<uses-permission android:name=\"android.permission.RECEIVE_BOOT_COMPLETED\"/><uses-permission android:name=\"android.permission.POST_NOTIFICATIONS\"/><uses-permission android:name=\"android.permission.SCHEDULE_EXACT_ALARM\"/><uses-permission android:name=\"android.permission.USE_EXACT_ALARM\"/><uses-permission android:name=\"android.permission.WAKE_LOCK\"/><uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\"/><uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\"/>"
           QUERIES="<queries><intent><action android:name=\"android.intent.action.VIEW\" /><data android:mimeType=\"*/*\" /></intent></queries>"
