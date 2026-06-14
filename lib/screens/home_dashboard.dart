@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/providers.dart';
 import '../models/models.dart';
 
@@ -9,7 +10,7 @@ class HomeDashboard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final scripts = ref.watch(scriptsProvider);
+    final projects = ref.watch(projectsProvider);
     final blocks = ref.watch(timeBlocksProvider);
     final earnings = ref.watch(earningsProvider);
     final notes = ref.watch(notesProvider);
@@ -17,7 +18,7 @@ class HomeDashboard extends ConsumerWidget {
     final upcomingBlocks = blocks.where((b) => b.startTime.isAfter(DateTime.now())).toList()
       ..sort((a, b) => a.startTime.compareTo(b.startTime));
 
-    final dueScripts = scripts.where((s) => s.status != ScriptStatus.published).toList()
+    final dueProjects = projects.where((s) => s.status != ProjectStatus.completed).toList()
       ..sort((a, b) => a.deadline.compareTo(b.deadline));
 
     final totalEarningsThisWeek = earnings
@@ -41,60 +42,72 @@ class HomeDashboard extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _buildSectionTitle(context, 'Upcoming Schedule'),
-          if (upcomingBlocks.isEmpty)
-            const Card(child: Padding(padding: EdgeInsets.all(16.0), child: Text('No upcoming blocks.')))
-          else
-            ...upcomingBlocks.take(2).map((b) => _buildTimeBlockCard(context, b)),
-
-          const SizedBox(height: 24),
-          _buildSectionTitle(context, 'Scripts Due Soon'),
-          if (dueScripts.isEmpty)
-            const Card(child: Padding(padding: EdgeInsets.all(16.0), child: Text('All caught up!')))
-          else
-            ...dueScripts.take(2).map((s) => _buildScriptCard(context, s)),
-
-          const SizedBox(height: 24),
-          _buildSectionTitle(context, 'Earnings This Week'),
+          _buildSectionTitle(context, 'Earnings This Week').animate().fade().slideX(),
           Card(
-            child: Padding(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearBinding(context),
+                borderRadius: BorderRadius.circular(24),
+              ),
               padding: const EdgeInsets.all(24.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Total:', style: TextStyle(fontSize: 18)),
+                  const Text('Total:', style: TextStyle(fontSize: 18, color: Colors.white)),
                   Text(
-                    NumberFormat.currency(symbol: '\$').format(totalEarningsThisWeek),
-                    style: TextStyle(
-                      fontSize: 28,
+                    '₹\${NumberFormat.decimalPattern().format(totalEarningsThisWeek)}',
+                    style: const TextStyle(
+                      fontSize: 32,
                       fontWeight: FontWeight.bold,
-                      color: Theme.of(context).primaryColor,
+                      color: Colors.white,
                     ),
                   ),
                 ],
               ),
             ),
-          ),
+          ).animate().fade(delay: 100.ms).scale(),
 
           const SizedBox(height: 24),
-          _buildSectionTitle(context, 'Recent Notes'),
+          _buildSectionTitle(context, 'Upcoming Schedule').animate().fade(delay: 200.ms).slideX(),
+          if (upcomingBlocks.isEmpty)
+            const Card(child: Padding(padding: EdgeInsets.all(16.0), child: Text('No upcoming blocks.'))).animate().fade(delay: 300.ms)
+          else
+            ...upcomingBlocks.take(2).map((b) => _buildTimeBlockCard(context, b).animate().fade(delay: 300.ms).slideY(begin: 0.2)),
+
+          const SizedBox(height: 24),
+          _buildSectionTitle(context, 'Projects Due Soon').animate().fade(delay: 400.ms).slideX(),
+          if (dueProjects.isEmpty)
+            const Card(child: Padding(padding: EdgeInsets.all(16.0), child: Text('All caught up!'))).animate().fade(delay: 500.ms)
+          else
+            ...dueProjects.take(2).map((p) => _buildProjectCard(context, p).animate().fade(delay: 500.ms).slideY(begin: 0.2)),
+
+          const SizedBox(height: 24),
+          _buildSectionTitle(context, 'Recent Notes').animate().fade(delay: 600.ms).slideX(),
           if (notes.isEmpty)
-            const Card(child: Padding(padding: EdgeInsets.all(16.0), child: Text('No notes yet.')))
+            const Card(child: Padding(padding: EdgeInsets.all(16.0), child: Text('No notes yet.'))).animate().fade(delay: 700.ms)
           else
             ...notes.take(2).map((n) => Card(
               child: ListTile(
-                title: Text(n.title),
+                title: Text(n.title, style: const TextStyle(fontWeight: FontWeight.bold)),
                 subtitle: Text(n.body, maxLines: 2, overflow: TextOverflow.ellipsis),
               ),
-            )),
+            ).animate().fade(delay: 700.ms).slideY(begin: 0.2)),
         ],
       ),
     );
   }
 
+  LinearGradient LinearBinding(BuildContext context) {
+      return LinearGradient(
+                colors: [Theme.of(context).primaryColor, Theme.of(context).colorScheme.secondary],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              );
+  }
+
   Widget _buildSectionTitle(BuildContext context, String title) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
+      padding: const EdgeInsets.only(bottom: 8.0, left: 4),
       child: Text(
         title,
         style: Theme.of(context).textTheme.titleLarge,
@@ -104,22 +117,27 @@ class HomeDashboard extends ConsumerWidget {
 
   Widget _buildTimeBlockCard(BuildContext context, TimeBlock block) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Container(
-          width: 12,
-          color: Color(int.parse(block.colorTag.replaceFirst('#', '0xFF'))),
+          width: 4,
+          height: double.infinity,
+          decoration: BoxDecoration(
+            color: Color(int.parse(block.colorTag.replaceFirst('#', '0xFF'))),
+            borderRadius: BorderRadius.circular(4),
+          ),
         ),
         title: Text(block.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text('${DateFormat.jm().format(block.startTime)} - ${DateFormat.jm().format(block.endTime)}'),
+        subtitle: Text('\${DateFormat.jm().format(block.startTime)} - \${DateFormat.jm().format(block.endTime)}'),
       ),
     );
   }
 
-  Widget _buildScriptCard(BuildContext context, Script script) {
-    double progress = script.status.index / 3;
+  Widget _buildProjectCard(BuildContext context, CreatorProject project) {
+    double progress = project.status.index / 4;
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -128,14 +146,26 @@ class HomeDashboard extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(child: Text(script.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))),
-                Chip(label: Text(script.status.name.toUpperCase(), style: const TextStyle(fontSize: 10))),
+                Expanded(child: Text(project.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))),
+                Text(project.status.name.toUpperCase(), style: TextStyle(fontSize: 10, color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold)),
               ],
             ),
-            const SizedBox(height: 8),
-            LinearProgressIndicator(value: progress, backgroundColor: Colors.white12),
-            const SizedBox(height: 8),
-            Text('Due: ${DateFormat.yMMMd().format(script.deadline)}', style: Theme.of(context).textTheme.bodyMedium),
+            const SizedBox(height: 12),
+            LinearProgressIndicator(value: progress, backgroundColor: Colors.white12, color: Theme.of(context).colorScheme.tertiary, borderRadius: BorderRadius.circular(2)),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.payment, size: 14, color: project.paymentStatus == PaymentStatus.completed ? Colors.green : Colors.orange),
+                    const SizedBox(width: 4),
+                    Text('₹\${project.paymentAmount.toStringAsFixed(0)}', style: Theme.of(context).textTheme.bodyMedium),
+                  ],
+                ),
+                Text('Due: \${DateFormat.yMMMd().format(project.deadline)}', style: Theme.of(context).textTheme.bodyMedium),
+              ],
+            ),
           ],
         ),
       ),

@@ -7,7 +7,7 @@ import 'providers/providers.dart';
 import 'services/storage_service.dart';
 import 'services/notification_service.dart';
 import 'screens/home_dashboard.dart';
-import 'screens/script_tracker.dart';
+import 'screens/project_manager.dart';
 import 'screens/schedule_alarms.dart';
 import 'screens/earnings_tracker.dart';
 import 'screens/quick_notes.dart';
@@ -64,7 +64,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
 
   final List<Widget> _pages = [
     const HomeDashboard(),
-    const ScriptTracker(),
+    const ProjectManager(),
     const ScheduleAlarms(),
     const EarningsTracker(),
     const QuickNotes(),
@@ -97,9 +97,9 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
               labelType: NavigationRailLabelType.all,
               destinations: const [
                 NavigationRailDestination(icon: Icon(Icons.dashboard), label: Text('Home')),
-                NavigationRailDestination(icon: Icon(Icons.movie_creation), label: Text('Scripts')),
+                NavigationRailDestination(icon: Icon(Icons.folder_special), label: Text('Projects')),
                 NavigationRailDestination(icon: Icon(Icons.schedule), label: Text('Schedule')),
-                NavigationRailDestination(icon: Icon(Icons.attach_money), label: Text('Earnings')),
+                NavigationRailDestination(icon: Icon(Icons.currency_rupee), label: Text('Earnings')),
                 NavigationRailDestination(icon: Icon(Icons.note), label: Text('Notes')),
               ],
             ),
@@ -130,9 +130,9 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
         type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.movie_creation), label: 'Scripts'),
+          BottomNavigationBarItem(icon: Icon(Icons.folder_special), label: 'Projects'),
           BottomNavigationBarItem(icon: Icon(Icons.schedule), label: 'Schedule'),
-          BottomNavigationBarItem(icon: Icon(Icons.attach_money), label: 'Earnings'),
+          BottomNavigationBarItem(icon: Icon(Icons.currency_rupee), label: 'Earnings'),
           BottomNavigationBarItem(icon: Icon(Icons.note), label: 'Notes'),
         ],
       ),

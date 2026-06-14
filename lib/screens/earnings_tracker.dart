@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'package:collection/collection.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/providers.dart';
 import '../models/models.dart';
 
@@ -30,8 +31,8 @@ class EarningsTracker extends ConsumerWidget {
             BarChartRodData(
               toY: monthEarnings,
               color: Theme.of(context).primaryColor,
-              width: 16,
-              borderRadius: BorderRadius.circular(4),
+              width: 20,
+              borderRadius: BorderRadius.circular(6),
             )
           ],
         ),
@@ -45,27 +46,36 @@ class EarningsTracker extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         children: [
           Card(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Theme.of(context).colorScheme.secondary, Theme.of(context).primaryColor],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(24),
+              ),
+              padding: const EdgeInsets.all(32.0),
               child: Column(
                 children: [
-                  const Text('All Time Earnings', style: TextStyle(fontSize: 18)),
+                  const Text('All Time Earnings', style: TextStyle(fontSize: 18, color: Colors.white70)),
                   const SizedBox(height: 8),
                   Text(
-                    NumberFormat.currency(symbol: '\$').format(totalEarnings),
-                    style: TextStyle(
-                      fontSize: 36,
+                    '₹\${NumberFormat.decimalPattern().format(totalEarnings)}',
+                    style: const TextStyle(
+                      fontSize: 48,
                       fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.secondary,
+                      color: Colors.white,
                     ),
                   ),
                 ],
               ),
             ),
-          ),
+          ).animate().fade().scale(curve: Curves.easeOutBack),
+          
+          const SizedBox(height: 32),
+          const Text('Income Over Time', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)).animate().fade(delay: 200.ms).slideX(),
           const SizedBox(height: 24),
-          const Text('Income Over Time', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 16),
           if (barGroups.isNotEmpty)
             SizedBox(
               height: 250,
@@ -73,6 +83,7 @@ class EarningsTracker extends ConsumerWidget {
                 BarChartData(
                   barGroups: barGroups,
                   borderData: FlBorderData(show: false),
+                  gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (value) => FlLine(color: Colors.white12, strokeWidth: 1)),
                   titlesData: FlTitlesData(
                     leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -82,7 +93,10 @@ class EarningsTracker extends ConsumerWidget {
                         showTitles: true,
                         getTitlesWidget: (value, meta) {
                           if (value.toInt() >= 0 && value.toInt() < sortedKeys.length) {
-                            return Text(DateFormat.MMM().format(sortedKeys[value.toInt()]));
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: Text(DateFormat.MMM().format(sortedKeys[value.toInt()]), style: const TextStyle(fontWeight: FontWeight.bold)),
+                            );
                           }
                           return const Text('');
                         },
@@ -91,32 +105,46 @@ class EarningsTracker extends ConsumerWidget {
                   ),
                 ),
               ),
-            )
+            ).animate().fade(delay: 300.ms).slideY(begin: 0.2)
           else
-            const Center(child: Text('No data for chart.')),
-          const SizedBox(height: 24),
-          const Text('Recent Entries', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-          ...earnings.reversed.take(10).map((e) => Dismissible(
-                key: Key(e.id),
-                background: Container(color: Colors.red, alignment: Alignment.centerRight, padding: const EdgeInsets.only(right: 16), child: const Icon(Icons.delete, color: Colors.white)),
-                onDismissed: (_) {
-                  ref.read(earningsProvider.notifier).removeEarning(e.id);
-                },
-                child: Card(
-                  margin: const EdgeInsets.symmetric(vertical: 4),
-                  child: ListTile(
-                    title: Text(e.source),
-                    subtitle: Text(DateFormat.yMMMd().format(e.date)),
-                    trailing: Text(NumberFormat.currency(symbol: '\$').format(e.amount), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  ),
+            const Center(child: Text('No data for chart.')).animate().fade(delay: 300.ms),
+          
+          const SizedBox(height: 32),
+          const Text('Recent Entries', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)).animate().fade(delay: 400.ms).slideX(),
+          const SizedBox(height: 16),
+          ...earnings.reversed.take(10).toList().asMap().entries.map((entry) {
+            int idx = entry.key;
+            Earning e = entry.value;
+            return Dismissible(
+              key: Key(e.id),
+              background: Container(
+                decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(16)),
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.only(right: 24),
+                child: const Icon(Icons.delete, color: Colors.white),
+              ),
+              onDismissed: (_) {
+                ref.read(earningsProvider.notifier).removeEarning(e.id);
+              },
+              child: Card(
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                  leading: CircleAvatar(backgroundColor: Theme.of(context).primaryColor.withOpacity(0.2), child: Icon(Icons.arrow_downward, color: Theme.of(context).colorScheme.tertiary)),
+                  title: Text(e.source, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text(DateFormat.yMMMd().format(e.date)),
+                  trailing: Text('₹\${NumberFormat.decimalPattern().format(e.amount)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                 ),
-              )),
+              ),
+            ).animate().fade(delay: (500 + (idx * 100)).ms).slideY(begin: 0.2);
+          }),
         ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddEarningModal(context, ref),
         child: const Icon(Icons.add),
-      ),
+      ).animate().scale(delay: 600.ms),
     );
   }
 
@@ -124,11 +152,16 @@ class EarningsTracker extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) {
-        return Padding(
+        return Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          ),
           padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
           child: const _AddEarningForm(),
-        );
+        ).animate().slideY(begin: 1.0, end: 0, duration: 300.ms, curve: Curves.easeOutCubic);
       },
     );
   }
@@ -149,22 +182,35 @@ class _AddEarningFormState extends ConsumerState<_AddEarningForm> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.all(32.0),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(2)))),
+          const SizedBox(height: 32),
+          const Text('Add Earning', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 24),
           TextField(
             controller: _amountController,
-            decoration: const InputDecoration(labelText: 'Amount (\$)'),
+            decoration: InputDecoration(
+              labelText: 'Amount (₹)',
+              prefixText: '₹ ',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+            ),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           TextField(
             controller: _sourceController,
-            decoration: const InputDecoration(labelText: 'Source (e.g. YouTube Ads)'),
+            decoration: InputDecoration(
+              labelText: 'Source (e.g. YouTube Ads)',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+            ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           ListTile(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Colors.white24)),
             title: const Text('Date'),
             subtitle: Text(DateFormat.yMMMd().format(_date)),
             trailing: const Icon(Icons.calendar_today),
@@ -173,17 +219,26 @@ class _AddEarningFormState extends ConsumerState<_AddEarningForm> {
               if (d != null) setState(() => _date = d);
             },
           ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () {
-              final amount = double.tryParse(_amountController.text) ?? 0.0;
-              final source = _sourceController.text.trim();
-              if (amount > 0 && source.isNotEmpty) {
-                ref.read(earningsProvider.notifier).addEarning(Earning(amount: amount, source: source, date: _date));
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('Add Earning'),
+          const SizedBox(height: 32),
+          SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              onPressed: () {
+                final amount = double.tryParse(_amountController.text) ?? 0.0;
+                final source = _sourceController.text.trim();
+                if (amount > 0 && source.isNotEmpty) {
+                  ref.read(earningsProvider.notifier).addEarning(Earning(amount: amount, source: source, date: _date));
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Save Earning', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            ),
           )
         ],
       ),

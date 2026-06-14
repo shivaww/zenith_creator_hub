@@ -21,32 +21,32 @@ final themeModeProvider = StateProvider<bool>((ref) {
   return ref.watch(sharedPreferencesProvider).getBool('isDarkMode') ?? true;
 });
 
-// Scripts Provider
-class ScriptsNotifier extends StateNotifier<List<Script>> {
+// Projects Provider
+class ProjectsNotifier extends StateNotifier<List<CreatorProject>> {
   final StorageService storage;
-  ScriptsNotifier(this.storage) : super(storage.getScripts());
+  ProjectsNotifier(this.storage) : super(storage.getProjects());
 
-  void addScript(Script script) {
-    state = [...state, script];
-    storage.saveScripts(state);
+  void addProject(CreatorProject project) {
+    state = [...state, project];
+    storage.saveProjects(state);
   }
 
-  void updateScript(Script updated) {
+  void updateProject(CreatorProject updated) {
     state = [
-      for (final script in state)
-        if (script.id == updated.id) updated else script
+      for (final p in state)
+        if (p.id == updated.id) updated else p
     ];
-    storage.saveScripts(state);
+    storage.saveProjects(state);
   }
 
-  void removeScript(String id) {
-    state = state.where((script) => script.id != id).toList();
-    storage.saveScripts(state);
+  void removeProject(String id) {
+    state = state.where((p) => p.id != id).toList();
+    storage.saveProjects(state);
   }
 }
 
-final scriptsProvider = StateNotifierProvider<ScriptsNotifier, List<Script>>((ref) {
-  return ScriptsNotifier(ref.watch(storageServiceProvider));
+final projectsProvider = StateNotifierProvider<ProjectsNotifier, List<CreatorProject>>((ref) {
+  return ProjectsNotifier(ref.watch(storageServiceProvider));
 });
 
 // TimeBlocks Provider

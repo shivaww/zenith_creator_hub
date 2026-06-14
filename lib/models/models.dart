@@ -1,21 +1,34 @@
 import 'dart:convert';
 import 'package:uuid/uuid.dart';
 
-enum ScriptStatus { idea, draft, finalEdit, published }
+enum ProjectStatus { planning, research, scripting, production, completed }
+enum PaymentStatus { pending, completed, none }
 
-class Script {
+class CreatorProject {
   final String id;
   final String title;
-  final ScriptStatus status;
-  final int wordCount;
+  final ProjectStatus status;
   final DateTime deadline;
+  final DateTime? completionDate;
+  
+  // File Paths stored locally
+  final String? scriptFilePath;
+  final List<String> researchFilePaths;
+  
+  // Payment Tracking
+  final PaymentStatus paymentStatus;
+  final double paymentAmount;
 
-  Script({
+  CreatorProject({
     String? id,
     required this.title,
     required this.status,
-    required this.wordCount,
     required this.deadline,
+    this.completionDate,
+    this.scriptFilePath,
+    this.researchFilePaths = const [],
+    this.paymentStatus = PaymentStatus.none,
+    this.paymentAmount = 0.0,
   }) : id = id ?? const Uuid().v4();
 
   Map<String, dynamic> toMap() {
@@ -23,36 +36,52 @@ class Script {
       'id': id,
       'title': title,
       'status': status.index,
-      'wordCount': wordCount,
       'deadline': deadline.millisecondsSinceEpoch,
+      'completionDate': completionDate?.millisecondsSinceEpoch,
+      'scriptFilePath': scriptFilePath,
+      'researchFilePaths': researchFilePaths,
+      'paymentStatus': paymentStatus.index,
+      'paymentAmount': paymentAmount,
     };
   }
 
-  factory Script.fromMap(Map<String, dynamic> map) {
-    return Script(
+  factory CreatorProject.fromMap(Map<String, dynamic> map) {
+    return CreatorProject(
       id: map['id'],
       title: map['title'],
-      status: ScriptStatus.values[map['status'] ?? 0],
-      wordCount: map['wordCount']?.toInt() ?? 0,
+      status: ProjectStatus.values[map['status'] ?? 0],
       deadline: DateTime.fromMillisecondsSinceEpoch(map['deadline']),
+      completionDate: map['completionDate'] != null ? DateTime.fromMillisecondsSinceEpoch(map['completionDate']) : null,
+      scriptFilePath: map['scriptFilePath'],
+      researchFilePaths: List<String>.from(map['researchFilePaths'] ?? []),
+      paymentStatus: PaymentStatus.values[map['paymentStatus'] ?? 2],
+      paymentAmount: map['paymentAmount']?.toDouble() ?? 0.0,
     );
   }
 
   String toJson() => json.encode(toMap());
-  factory Script.fromJson(String source) => Script.fromMap(json.decode(source));
+  factory CreatorProject.fromJson(String source) => CreatorProject.fromMap(json.decode(source));
 
-  Script copyWith({
+  CreatorProject copyWith({
     String? title,
-    ScriptStatus? status,
-    int? wordCount,
+    ProjectStatus? status,
     DateTime? deadline,
+    DateTime? completionDate,
+    String? scriptFilePath,
+    List<String>? researchFilePaths,
+    PaymentStatus? paymentStatus,
+    double? paymentAmount,
   }) {
-    return Script(
+    return CreatorProject(
       id: id,
       title: title ?? this.title,
       status: status ?? this.status,
-      wordCount: wordCount ?? this.wordCount,
       deadline: deadline ?? this.deadline,
+      completionDate: completionDate ?? this.completionDate,
+      scriptFilePath: scriptFilePath ?? this.scriptFilePath,
+      researchFilePaths: researchFilePaths ?? this.researchFilePaths,
+      paymentStatus: paymentStatus ?? this.paymentStatus,
+      paymentAmount: paymentAmount ?? this.paymentAmount,
     );
   }
 }
@@ -104,6 +133,18 @@ class TimeBlock {
   
   String toJson() => json.encode(toMap());
   factory TimeBlock.fromJson(String source) => TimeBlock.fromMap(json.decode(source));
+
+  TimeBlock copyWith({bool? remindersEnabled}) {
+    return TimeBlock(
+      id: id,
+      title: title,
+      startTime: startTime,
+      endTime: endTime,
+      colorTag: colorTag,
+      recurrence: recurrence,
+      remindersEnabled: remindersEnabled ?? this.remindersEnabled,
+    );
+  }
 }
 
 class Earning {
