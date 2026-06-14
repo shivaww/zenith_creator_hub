@@ -12,7 +12,7 @@ class ProjectManager extends ConsumerWidget {
   const ProjectManager({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final projects = ref.watch(projectsProvider);
 
     return Scaffold(
