@@ -29,21 +29,21 @@ jobs:
       - name: Generate Native Folders
         run: flutter create --platforms=android --org com.shivaww.creatorhub .
 
-      - name: Add Android Permissions
+      - name: Add Android Permissions & Config
         run: |
           MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
           
-          # Add permissions
-          PERMISSIONS="<uses-permission android:name=\"android.permission.RECEIVE_BOOT_COMPLETED\"/>\n    <uses-permission android:name=\"android.permission.POST_NOTIFICATIONS\"/>\n    <uses-permission android:name=\"android.permission.SCHEDULE_EXACT_ALARM\"/>\n    <uses-permission android:name=\"android.permission.USE_EXACT_ALARM\"/>\n    <uses-permission android:name=\"android.permission.WAKE_LOCK\"/>\n    <uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\"/>\n    <uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\"/>"
-          sed -i -e "s|<application|$PERMISSIONS\n    <application|g" $MANIFEST_PATH
-          
-          # Add queries for OpenFilex (Android 11+)
-          QUERIES="<queries>\n        <intent>\n            <action android:name=\"android.intent.action.VIEW\" />\n            <data android:mimeType=\"*/*\" />\n        </intent>\n    </queries>"
-          sed -i -e "s|<manifest| $QUERIES\n<manifest|g" $MANIFEST_PATH
+          # 1. Define segments to insert
+          PERMISSIONS="<uses-permission android:name=\"android.permission.RECEIVE_BOOT_COMPLETED\"/><uses-permission android:name=\"android.permission.POST_NOTIFICATIONS\"/><uses-permission android:name=\"android.permission.SCHEDULE_EXACT_ALARM\"/><uses-permission android:name=\"android.permission.USE_EXACT_ALARM\"/><uses-permission android:name=\"android.permission.WAKE_LOCK\"/><uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\"/><uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\"/>"
+          QUERIES="<queries><intent><action android:name=\"android.intent.action.VIEW\" /><data android:mimeType=\"*/*\" /></intent></queries>"
+          RECEIVERS="<receiver android:exported=\"false\" android:name=\"com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver\" /><receiver android:exported=\"false\" android:name=\"com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver\"><intent-filter><action android:name=\"android.intent.action.BOOT_COMPLETED\"/><action android:name=\"android.intent.action.MY_PACKAGE_REPLACED\"/><action android:name=\"android.intent.action.QUICKBOOT_POWERON\" /><action android:name=\"com.htc.intent.action.QUICKBOOT_POWERON\"/></intent-filter></receiver><provider android:name=\"com.vincent.filepicker.FileProvider\" android:authorities=\"\${applicationId}.provider\" android:exported=\"false\" android:grantUriPermissions=\"true\"><meta-data android:name=\"android.support.FILE_PROVIDER_PATHS\" android:resource=\"@xml/file_paths\" /></provider>"
 
-          # Add boot receiver and FileProvider
-          RECEIVER="<receiver android:exported=\"false\" android:name=\"com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver\" />\n        <receiver android:exported=\"false\" android:name=\"com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver\">\n            <intent-filter>\n                <action android:name=\"android.intent.action.BOOT_COMPLETED\"/>\n                <action android:name=\"android.intent.action.MY_PACKAGE_REPLACED\"/>\n                <action android:name=\"android.intent.action.QUICKBOOT_POWERON\" />\n                <action android:name=\"com.htc.intent.action.QUICKBOOT_POWERON\"/>\n            </intent-filter>\n        </receiver>\n        <provider android:name=\"com.vincent.filepicker.FileProvider\" android:authorities=\"\${applicationId}.provider\" android:exported=\"false\" android:grantUriPermissions=\"true\">\n            <meta-data android:name=\"android.support.FILE_PROVIDER_PATHS\" android:resource=\"@xml/file_paths\" />\n        </provider>"
-          sed -i -e "s|</activity>|</activity>\n        $RECEIVER|g" $MANIFEST_PATH
+          # 2. Use 'sed' to insert before <application (Permissions and Queries)
+          sed -i "/<application/i $PERMISSIONS" $MANIFEST_PATH
+          sed -i "/<application/i $QUERIES" $MANIFEST_PATH
+          
+          # 3. Use 'sed' to insert before </application (Receivers and Provider)
+          sed -i "/<\/application/i $RECEIVERS" $MANIFEST_PATH
 
       - name: Get Dependencies
         run: flutter pub get
