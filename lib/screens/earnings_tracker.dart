@@ -60,12 +60,15 @@ class EarningsTracker extends ConsumerWidget {
                 children: [
                   const Text('All Time Earnings', style: TextStyle(fontSize: 18, color: Colors.white70)),
                   const SizedBox(height: 8),
-                  Text(
-                    '₹\${NumberFormat.decimalPattern().format(totalEarnings)}',
-                    style: const TextStyle(
-                      fontSize: 48,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      '₹\${NumberFormat.decimalPattern().format(totalEarnings)}',
+                      style: const TextStyle(
+                        fontSize: 48,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ],
@@ -91,6 +94,7 @@ class EarningsTracker extends ConsumerWidget {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
+                        reservedSize: 32,
                         getTitlesWidget: (value, meta) {
                           if (value.toInt() >= 0 && value.toInt() < sortedKeys.length) {
                             return Padding(
@@ -134,7 +138,14 @@ class EarningsTracker extends ConsumerWidget {
                   leading: CircleAvatar(backgroundColor: Theme.of(context).primaryColor.withOpacity(0.2), child: Icon(Icons.arrow_downward, color: Theme.of(context).colorScheme.tertiary)),
                   title: Text(e.source, style: const TextStyle(fontWeight: FontWeight.bold)),
                   subtitle: Text(DateFormat.yMMMd().format(e.date)),
-                  trailing: Text('₹\${NumberFormat.decimalPattern().format(e.amount)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                  trailing: SizedBox(
+                    width: 120,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerRight,
+                      child: Text('₹\${NumberFormat.decimalPattern().format(e.amount)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                    ),
+                  ),
                 ),
               ),
             ).animate().fade(delay: (500 + (idx * 100)).ms).slideY(begin: 0.2);
@@ -230,11 +241,14 @@ class _AddEarningFormState extends ConsumerState<_AddEarningForm> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
               onPressed: () {
-                final amount = double.tryParse(_amountController.text) ?? 0.0;
+                final amountText = _amountController.text.replaceAll(',', '').trim();
+                final amount = double.tryParse(amountText) ?? 0.0;
                 final source = _sourceController.text.trim();
                 if (amount > 0 && source.isNotEmpty) {
                   ref.read(earningsProvider.notifier).addEarning(Earning(amount: amount, source: source, date: _date));
                   Navigator.pop(context);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter a valid amount and source')));
                 }
               },
               child: const Text('Save Earning', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),

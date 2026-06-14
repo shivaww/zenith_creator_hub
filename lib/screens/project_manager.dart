@@ -92,15 +92,20 @@ class ProjectManager extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Icon(Icons.payment, size: 16, color: project.paymentStatus == PaymentStatus.completed ? Colors.green : Colors.orange),
-                    const SizedBox(width: 4),
-                    Text(
-                      '₹\${project.paymentAmount.toStringAsFixed(0)}',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                  ],
+                Expanded(
+                  child: Row(
+                    children: [
+                      Icon(Icons.payment, size: 16, color: project.paymentStatus == PaymentStatus.completed ? Colors.green : Colors.orange),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          '₹\${project.paymentAmount.toStringAsFixed(0)}',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 Text('Due: \${DateFormat.MMMEd().format(project.deadline)}', style: Theme.of(context).textTheme.bodyMedium),
               ],
@@ -299,12 +304,20 @@ class _AddEditProjectFormState extends ConsumerState<_AddEditProjectForm> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               onPressed: () {
+                final title = _titleController.text.trim();
+                if (title.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Project Title cannot be empty')));
+                  return;
+                }
+                
+                final paymentText = _paymentAmountController.text.replaceAll(',', '').trim();
+                
                 final newProject = CreatorProject(
                   id: widget.project?.id,
-                  title: _titleController.text.trim().isEmpty ? 'Untitled' : _titleController.text.trim(),
+                  title: title,
                   status: _status,
                   deadline: _deadline,
-                  paymentAmount: double.tryParse(_paymentAmountController.text) ?? 0.0,
+                  paymentAmount: double.tryParse(paymentText) ?? 0.0,
                   paymentStatus: _paymentStatus,
                   scriptFilePath: _scriptFile,
                   researchFilePaths: _researchFiles,

@@ -54,12 +54,19 @@ class HomeDashboard extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text('Total:', style: TextStyle(fontSize: 18, color: Colors.white)),
-                  Text(
-                    '₹\${NumberFormat.decimalPattern().format(totalEarningsThisWeek)}',
-                    style: const TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        '₹\${NumberFormat.decimalPattern().format(totalEarningsThisWeek)}',
+                        style: const TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -156,12 +163,20 @@ class HomeDashboard extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Icon(Icons.payment, size: 14, color: project.paymentStatus == PaymentStatus.completed ? Colors.green : Colors.orange),
-                    const SizedBox(width: 4),
-                    Text('₹\${project.paymentAmount.toStringAsFixed(0)}', style: Theme.of(context).textTheme.bodyMedium),
-                  ],
+                Expanded(
+                  child: Row(
+                    children: [
+                      Icon(Icons.payment, size: 14, color: project.paymentStatus == PaymentStatus.completed ? Colors.green : Colors.orange),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          '₹\${project.paymentAmount.toStringAsFixed(0)}',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 Text('Due: \${DateFormat.yMMMd().format(project.deadline)}', style: Theme.of(context).textTheme.bodyMedium),
               ],

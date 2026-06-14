@@ -241,12 +241,17 @@ class _AddEditBlockFormState extends ConsumerState<_AddEditBlockForm> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
                 onPressed: () {
+                  final title = _titleController.text.trim();
+                  if (title.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Task Title cannot be empty')));
+                    return;
+                  }
                   final sDateTime = DateTime(widget.initialDate.year, widget.initialDate.month, widget.initialDate.day, _startTime.hour, _startTime.minute);
                   final eDateTime = DateTime(widget.initialDate.year, widget.initialDate.month, widget.initialDate.day, _endTime.hour, _endTime.minute);
                   
                   final newBlock = TimeBlock(
                     id: widget.block?.id,
-                    title: _titleController.text.trim().isEmpty ? 'Untitled' : _titleController.text.trim(),
+                    title: title,
                     startTime: sDateTime,
                     endTime: eDateTime,
                     colorTag: '#FF00FFCC', // Default cyan for simplicity

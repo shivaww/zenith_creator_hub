@@ -288,10 +288,15 @@ class _AddEditNoteFormState extends ConsumerState<_AddEditNoteForm> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
                 onPressed: () {
+                  final title = _titleController.text.trim();
+                  if (title.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Title cannot be empty')));
+                    return;
+                  }
                   final tags = _tagsController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
                   final newNote = Note(
                     id: widget.note?.id,
-                    title: _titleController.text.trim().isEmpty ? 'Untitled' : _titleController.text.trim(),
+                    title: title,
                     body: _bodyController.text.trim(),
                     url: _urlController.text.trim().isEmpty ? null : _urlController.text.trim(),
                     tags: tags,
