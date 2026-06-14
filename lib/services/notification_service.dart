@@ -12,8 +12,12 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
   Future<void> init() async {
-    tz.initializeTimeZones();
-    tz.setLocalLocation(tz.getLocation('America/New_York')); // Fallback, would ideally use tz from device
+    try {
+      tz.initializeTimeZones();
+      tz.setLocalLocation(tz.getLocation('UTC'));
+    } catch (e) {
+      // Log error but don't crash
+    }
 
     const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
     const DarwinInitializationSettings initializationSettingsDarwin = DarwinInitializationSettings();

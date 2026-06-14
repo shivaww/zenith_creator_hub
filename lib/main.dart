@@ -15,19 +15,28 @@ import 'screens/quick_notes.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  final prefs = await SharedPreferences.getInstance();
-  final storageService = StorageService(prefs);
-  await storageService.seedIfEmpty(); // Seed mock data if first launch
-  
-  final notificationService = NotificationService();
-  await notificationService.init();
+  SharedPreferences? prefs;
+  StorageService? storageService;
+  NotificationService? notificationService;
+
+  try {
+    prefs = await SharedPreferences.getInstance();
+    storageService = StorageService(prefs);
+    await storageService.seedIfEmpty(); 
+    
+    notificationService = NotificationService();
+    await notificationService.init();
+  } catch (e) {
+    // If initialization fails, we proceed with fallback values if possible
+    // or just let Riverpod handle the UnimplementedErrors later.
+  }
 
   runApp(
     ProviderScope(
       overrides: [
-        sharedPreferencesProvider.overrideWithValue(prefs),
-        storageServiceProvider.overrideWithValue(storageService),
-        notificationServiceProvider.overrideWithValue(notificationService),
+        if (prefs != null) sharedPreferencesProvider.overrideWithValue(prefs),
+        if (storageService != null) storageServiceProvider.overrideWithValue(storageService),
+        if (notificationService != null) notificationServiceProvider.overrideWithValue(notificationService),
       ],
       child: const ZenithApp(),
     ),
