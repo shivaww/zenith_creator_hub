@@ -15,7 +15,11 @@ class StorageService {
   // Projects
   List<CreatorProject> getProjects() {
     final List<String> items = _prefs.getStringList(_projectsKey) ?? [];
-    return items.map((e) => CreatorProject.fromJson(e)).toList();
+    List<CreatorProject> validItems = [];
+    for (var e in items) {
+      try { validItems.add(CreatorProject.fromJson(e)); } catch (_) {}
+    }
+    return validItems;
   }
 
   Future<void> saveProjects(List<CreatorProject> projects) async {
@@ -26,7 +30,11 @@ class StorageService {
   // TimeBlocks
   List<TimeBlock> getTimeBlocks() {
     final List<String> items = _prefs.getStringList(_timeBlocksKey) ?? [];
-    return items.map((e) => TimeBlock.fromJson(e)).toList();
+    List<TimeBlock> validItems = [];
+    for (var e in items) {
+      try { validItems.add(TimeBlock.fromJson(e)); } catch (_) {}
+    }
+    return validItems;
   }
 
   Future<void> saveTimeBlocks(List<TimeBlock> blocks) async {
@@ -37,7 +45,11 @@ class StorageService {
   // Earnings
   List<Earning> getEarnings() {
     final List<String> items = _prefs.getStringList(_earningsKey) ?? [];
-    return items.map((e) => Earning.fromJson(e)).toList();
+    List<Earning> validItems = [];
+    for (var e in items) {
+      try { validItems.add(Earning.fromJson(e)); } catch (_) {}
+    }
+    return validItems;
   }
 
   Future<void> saveEarnings(List<Earning> earnings) async {
@@ -48,7 +60,11 @@ class StorageService {
   // Notes
   List<Note> getNotes() {
     final List<String> items = _prefs.getStringList(_notesKey) ?? [];
-    return items.map((e) => Note.fromJson(e)).toList();
+    List<Note> validItems = [];
+    for (var e in items) {
+      try { validItems.add(Note.fromJson(e)); } catch (_) {}
+    }
+    return validItems;
   }
 
   Future<void> saveNotes(List<Note> notes) async {
@@ -104,13 +120,6 @@ class StorageService {
           paymentStatus: PaymentStatus.pending,
           paymentAmount: 15000,
         ),
-        CreatorProject(
-          title: 'Top AI Tools',
-          status: ProjectStatus.research,
-          deadline: DateTime.now().add(const Duration(days: 2)),
-          paymentStatus: PaymentStatus.completed,
-          paymentAmount: 5000,
-        ),
       ]);
 
       await saveTimeBlocks([
@@ -119,11 +128,10 @@ class StorageService {
 
       await saveEarnings([
         Earning(amount: 5000.0, source: 'Sponsorship', date: DateTime.now().subtract(const Duration(days: 1))),
-        Earning(amount: 15000.0, source: 'Freelance App', date: DateTime.now().subtract(const Duration(days: 3))),
       ]);
 
       await saveNotes([
-        Note(title: 'AI Script Ideas', body: 'Cover cursor, claude, and zenith.', tags: ['Ideas', 'AI']),
+        Note(title: 'AI Script Ideas', body: 'Cover latest tools.', tags: ['Ideas', 'AI']),
       ]);
     }
   }

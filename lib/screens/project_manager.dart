@@ -18,31 +18,33 @@ class ProjectManager extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Project Manager'),
       ),
-      body: projects.isEmpty
-          ? Center(child: const Text('No active projects.').animate().fade().scale())
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: projects.length,
-              itemBuilder: (context, index) {
-                final project = projects[index];
-                return Dismissible(
-                  key: Key(project.id),
-                  background: Container(
-                    decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(24)),
-                    alignment: Alignment.centerRight,
-                    padding: const EdgeInsets.only(right: 24),
-                    child: const Icon(Icons.delete, color: Colors.white),
-                  ),
-                  onDismissed: (_) {
-                    ref.read(projectsProvider.notifier).removeProject(project.id);
-                  },
-                  child: GestureDetector(
-                    onTap: () => _showAddEditProjectModal(context, ref, project: project),
-                    child: _buildProjectCard(context, project),
-                  ),
-                ).animate().fade(duration: (200 + (index * 100)).ms).slideY(begin: 0.2, end: 0);
-              },
-            ),
+      body: SafeArea(
+        child: projects.isEmpty
+            ? Center(child: const Text('No active projects.').animate().fade().scale())
+            : ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: projects.length,
+                itemBuilder: (context, index) {
+                  final project = projects[index];
+                  return Dismissible(
+                    key: Key(project.id),
+                    background: Container(
+                      decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(24)),
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.only(right: 24),
+                      child: const Icon(Icons.delete, color: Colors.white),
+                    ),
+                    onDismissed: (_) {
+                      ref.read(projectsProvider.notifier).removeProject(project.id);
+                    },
+                    child: GestureDetector(
+                      onTap: () => _showAddEditProjectModal(context, ref, project: project),
+                      child: _buildProjectCard(context, project),
+                    ),
+                  ).animate().fade(duration: (200 + (index * 100)).ms).slideY(begin: 0.2, end: 0);
+                },
+              ),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddEditProjectModal(context, ref),
         child: const Icon(Icons.add),
@@ -71,7 +73,8 @@ class ProjectManager extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(child: Text(project.title, style: Theme.of(context).textTheme.titleLarge)),
+                Expanded(child: Text(project.title, style: Theme.of(context).textTheme.titleLarge, overflow: TextOverflow.ellipsis)),
+                const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
@@ -89,35 +92,33 @@ class ProjectManager extends ConsumerWidget {
             const SizedBox(height: 16),
             LinearProgressIndicator(value: progress, backgroundColor: Colors.white12, color: statusColor, minHeight: 6, borderRadius: BorderRadius.circular(3)),
             const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                Expanded(
-                  child: Row(
-                    children: [
-                      Icon(Icons.payment, size: 16, color: project.paymentStatus == PaymentStatus.completed ? Colors.green : Colors.orange),
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
-                          '₹\${project.paymentAmount.toStringAsFixed(0)}',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.payment, size: 16, color: project.paymentStatus == PaymentStatus.completed ? Colors.green : Colors.orange),
+                    const SizedBox(width: 4),
+                    Text(
+                      '₹\${project.paymentAmount.toStringAsFixed(0)}',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ],
                 ),
                 Text('Due: \${DateFormat.MMMEd().format(project.deadline)}', style: Theme.of(context).textTheme.bodyMedium),
               ],
             ),
             if (project.scriptFilePath != null || project.researchFilePaths.isNotEmpty) ...[
               const Divider(height: 24),
-              Row(
+              Wrap(
+                spacing: 16,
                 children: [
                   if (project.scriptFilePath != null)
-                    const Padding(padding: EdgeInsets.only(right: 8.0), child: Icon(Icons.description, size: 16, color: Colors.blue)),
+                    Row(mainAxisSize: MainAxisSize.min, children: const [Icon(Icons.description, size: 16, color: Colors.blue)]),
                   if (project.researchFilePaths.isNotEmpty)
-                    Padding(padding: const EdgeInsets.only(right: 8.0), child: Row(children: [const Icon(Icons.folder_shared, size: 16, color: Colors.orange), const SizedBox(width: 4), Text('\${project.researchFilePaths.length}', style: const TextStyle(fontSize: 12))])),
+                    Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.folder_shared, size: 16, color: Colors.orange), const SizedBox(width: 4), Text('\${project.researchFilePaths.length}', style: const TextStyle(fontSize: 12))]),
                 ],
               )
             ]
@@ -133,14 +134,18 @@ class ProjectManager extends ConsumerWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        return Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
+        return Padding(
           padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-          child: _AddEditProjectForm(project: project),
-        ).animate().slideY(begin: 1.0, end: 0, duration: 300.ms, curve: Curves.easeOutCubic);
+          child: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: SingleChildScrollView(
+              child: _AddEditProjectForm(project: project),
+            ),
+          ).animate().slideY(begin: 1.0, end: 0, duration: 300.ms, curve: Curves.easeOutCubic),
+        );
       },
     );
   }
@@ -168,7 +173,7 @@ class _AddEditProjectFormState extends ConsumerState<_AddEditProjectForm> {
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.project?.title ?? '');
-    _paymentAmountController = TextEditingController(text: widget.project?.paymentAmount.toString() ?? '0');
+    _paymentAmountController = TextEditingController(text: widget.project?.paymentAmount.toStringAsFixed(0) ?? '0');
     _status = widget.project?.status ?? ProjectStatus.planning;
     _paymentStatus = widget.project?.paymentStatus ?? PaymentStatus.none;
     _deadline = widget.project?.deadline ?? DateTime.now().add(const Duration(days: 7));
@@ -196,146 +201,141 @@ class _AddEditProjectFormState extends ConsumerState<_AddEditProjectForm> {
 
   @override
   Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      initialChildSize: 0.9,
-      minChildSize: 0.5,
-      maxChildSize: 0.95,
-      expand: false,
-      builder: (_, controller) {
-        return ListView(
-          padding: const EdgeInsets.all(24.0),
-          controller: controller,
-          children: [
-            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(2)))),
-            const SizedBox(height: 24),
-            Text(widget.project == null ? 'New Project' : 'Edit Project', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 24),
-            TextField(
-              controller: _titleController,
-              decoration: const InputDecoration(labelText: 'Project Title', border: OutlineInputBorder()),
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<ProjectStatus>(
-              value: _status,
-              items: ProjectStatus.values.map((s) => DropdownMenuItem(value: s, child: Text(s.name.toUpperCase()))).toList(),
-              onChanged: (v) => setState(() => _status = v!),
-              decoration: const InputDecoration(labelText: 'Project Status', border: OutlineInputBorder()),
-            ),
-            const SizedBox(height: 16),
-            Row(
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(2)))),
+          const SizedBox(height: 24),
+          Text(widget.project == null ? 'New Project' : 'Edit Project', style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center),
+          const SizedBox(height: 24),
+          TextField(
+            controller: _titleController,
+            decoration: const InputDecoration(labelText: 'Project Title', border: OutlineInputBorder()),
+          ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<ProjectStatus>(
+            value: _status,
+            items: ProjectStatus.values.map((s) => DropdownMenuItem(value: s, child: Text(s.name.toUpperCase()))).toList(),
+            onChanged: (v) => setState(() => _status = v!),
+            decoration: const InputDecoration(labelText: 'Project Status', border: OutlineInputBorder()),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _paymentAmountController,
+                  decoration: const InputDecoration(labelText: 'Payment (₹)', border: OutlineInputBorder(), prefixText: '₹ '),
+                  keyboardType: TextInputType.number,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: DropdownButtonFormField<PaymentStatus>(
+                  value: _paymentStatus,
+                  items: PaymentStatus.values.map((s) => DropdownMenuItem(value: s, child: Text(s.name.toUpperCase()))).toList(),
+                  onChanged: (v) => setState(() => _paymentStatus = v!),
+                  decoration: const InputDecoration(labelText: 'Payment Status', border: OutlineInputBorder()),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ListTile(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: const BorderSide(color: Colors.white24)),
+            title: const Text('Deadline'),
+            subtitle: Text(DateFormat.yMMMd().format(_deadline)),
+            trailing: const Icon(Icons.calendar_today),
+            onTap: () async {
+              final date = await showDatePicker(
+                context: context,
+                initialDate: _deadline,
+                firstDate: DateTime(2000),
+                lastDate: DateTime(2100),
+              );
+              if (date != null) setState(() => _deadline = date);
+            },
+          ),
+          const Divider(height: 32),
+          Text('Files & Assets', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 16),
+          // Script File
+          ListTile(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: const BorderSide(color: Colors.white24)),
+            leading: const Icon(Icons.description, color: Colors.blue),
+            title: Text(_scriptFile != null ? _scriptFile!.split('/').last : 'No Script Attached', overflow: TextOverflow.ellipsis),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: _paymentAmountController,
-                    decoration: const InputDecoration(labelText: 'Payment (₹)', border: OutlineInputBorder(), prefixText: '₹ '),
-                    keyboardType: TextInputType.number,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: DropdownButtonFormField<PaymentStatus>(
-                    value: _paymentStatus,
-                    items: PaymentStatus.values.map((s) => DropdownMenuItem(value: s, child: Text(s.name.toUpperCase()))).toList(),
-                    onChanged: (v) => setState(() => _paymentStatus = v!),
-                    decoration: const InputDecoration(labelText: 'Payment Status', border: OutlineInputBorder()),
-                  ),
-                ),
+                if (_scriptFile != null) IconButton(icon: const Icon(Icons.open_in_new), onPressed: () => OpenFilex.open(_scriptFile!)),
+                IconButton(icon: const Icon(Icons.attach_file), onPressed: _pickScriptFile),
               ],
             ),
-            const SizedBox(height: 16),
-            ListTile(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: const BorderSide(color: Colors.white24)),
-              title: const Text('Deadline'),
-              subtitle: Text(DateFormat.yMMMd().format(_deadline)),
-              trailing: const Icon(Icons.calendar_today),
-              onTap: () async {
-                final date = await showDatePicker(
-                  context: context,
-                  initialDate: _deadline,
-                  firstDate: DateTime(2000),
-                  lastDate: DateTime(2100),
-                );
-                if (date != null) setState(() => _deadline = date);
-              },
-            ),
-            const Divider(height: 32),
-            Text('Files & Assets', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 16),
-            // Script File
-            ListTile(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: const BorderSide(color: Colors.white24)),
-              leading: const Icon(Icons.description, color: Colors.blue),
-              title: Text(_scriptFile != null ? _scriptFile!.split('/').last : 'No Script Attached'),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (_scriptFile != null) IconButton(icon: const Icon(Icons.open_in_new), onPressed: () => OpenFilex.open(_scriptFile!)),
-                  IconButton(icon: const Icon(Icons.attach_file), onPressed: _pickScriptFile),
-                ],
+          ),
+          const SizedBox(height: 8),
+          // Research Files
+          ListTile(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: const BorderSide(color: Colors.white24)),
+            leading: const Icon(Icons.folder_shared, color: Colors.orange),
+            title: Text('\${_researchFiles.length} Research Files'),
+            trailing: IconButton(icon: const Icon(Icons.add), onPressed: _pickResearchFiles),
+          ),
+          if (_researchFiles.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0, left: 16),
+              child: Column(
+                children: _researchFiles.map((f) => Row(
+                  children: [
+                    Expanded(child: Text(f.split('/').last, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12))),
+                    IconButton(icon: const Icon(Icons.open_in_new, size: 16), onPressed: () => OpenFilex.open(f)),
+                    IconButton(icon: const Icon(Icons.close, size: 16, color: Colors.red), onPressed: () => setState(() => _researchFiles.remove(f))),
+                  ],
+                )).toList(),
               ),
             ),
-            const SizedBox(height: 8),
-            // Research Files
-            ListTile(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: const BorderSide(color: Colors.white24)),
-              leading: const Icon(Icons.folder_shared, color: Colors.orange),
-              title: Text('\${_researchFiles.length} Research Files'),
-              trailing: IconButton(icon: const Icon(Icons.add), onPressed: _pickResearchFiles),
+          const SizedBox(height: 32),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              backgroundColor: Theme.of(context).primaryColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            if (_researchFiles.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0, left: 16),
-                child: Column(
-                  children: _researchFiles.map((f) => Row(
-                    children: [
-                      Expanded(child: Text(f.split('/').last, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12))),
-                      IconButton(icon: const Icon(Icons.open_in_new, size: 16), onPressed: () => OpenFilex.open(f)),
-                      IconButton(icon: const Icon(Icons.close, size: 16, color: Colors.red), onPressed: () => setState(() => _researchFiles.remove(f))),
-                    ],
-                  )).toList(),
-                ),
-              ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                backgroundColor: Theme.of(context).primaryColor,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: () {
-                final title = _titleController.text.trim();
-                if (title.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Project Title cannot be empty')));
-                  return;
-                }
-                
-                final paymentText = _paymentAmountController.text.replaceAll(',', '').trim();
-                
-                final newProject = CreatorProject(
-                  id: widget.project?.id,
-                  title: title,
-                  status: _status,
-                  deadline: _deadline,
-                  paymentAmount: double.tryParse(paymentText) ?? 0.0,
-                  paymentStatus: _paymentStatus,
-                  scriptFilePath: _scriptFile,
-                  researchFilePaths: _researchFiles,
-                  completionDate: _status == ProjectStatus.completed && widget.project?.status != ProjectStatus.completed ? DateTime.now() : widget.project?.completionDate,
-                );
-                
-                if (widget.project == null) {
-                  ref.read(projectsProvider.notifier).addProject(newProject);
-                } else {
-                  ref.read(projectsProvider.notifier).updateProject(newProject);
-                }
-                Navigator.pop(context);
-              },
-              child: const Text('Save Project', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            )
-          ],
-        );
-      },
+            onPressed: () {
+              final title = _titleController.text.trim();
+              if (title.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Project Title cannot be empty')));
+                return;
+              }
+              
+              final paymentText = _paymentAmountController.text.replaceAll(',', '').trim();
+              
+              final newProject = CreatorProject(
+                id: widget.project?.id,
+                title: title,
+                status: _status,
+                deadline: _deadline,
+                paymentAmount: double.tryParse(paymentText) ?? 0.0,
+                paymentStatus: _paymentStatus,
+                scriptFilePath: _scriptFile,
+                researchFilePaths: _researchFiles,
+                completionDate: _status == ProjectStatus.completed && widget.project?.status != ProjectStatus.completed ? DateTime.now() : widget.project?.completionDate,
+              );
+              
+              if (widget.project == null) {
+                ref.read(projectsProvider.notifier).addProject(newProject);
+              } else {
+                ref.read(projectsProvider.notifier).updateProject(newProject);
+              }
+              Navigator.pop(context);
+            },
+            child: const Text('Save Project', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          )
+        ],
+      ),
     );
   }
 }

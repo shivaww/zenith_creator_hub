@@ -32,57 +32,59 @@ class _ScheduleAlarmsState extends ConsumerState<ScheduleAlarms> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Schedule & Alarms')),
-      body: Column(
-        children: [
-          Container(
-            margin: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardTheme.color,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
-            ),
-            child: TableCalendar(
-              firstDay: DateTime.utc(2020, 10, 16),
-              lastDay: DateTime.utc(2030, 3, 14),
-              focusedDay: _focusedDay,
-              calendarFormat: CalendarFormat.week,
-              selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-              onDaySelected: (selectedDay, focusedDay) {
-                setState(() {
-                  _selectedDay = selectedDay;
-                  _focusedDay = focusedDay;
-                });
-              },
-              headerStyle: HeaderStyle(
-                formatButtonVisible: false,
-                titleCentered: true,
-                titleTextStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardTheme.color,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
               ),
-              calendarStyle: CalendarStyle(
-                todayDecoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withOpacity(0.5),
-                  shape: BoxShape.circle,
+              child: TableCalendar(
+                firstDay: DateTime.utc(2020, 10, 16),
+                lastDay: DateTime.utc(2030, 3, 14),
+                focusedDay: _focusedDay,
+                calendarFormat: CalendarFormat.week,
+                selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+                onDaySelected: (selectedDay, focusedDay) {
+                  setState(() {
+                    _selectedDay = selectedDay;
+                    _focusedDay = focusedDay;
+                  });
+                },
+                headerStyle: HeaderStyle(
+                  formatButtonVisible: false,
+                  titleCentered: true,
+                  titleTextStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
-                selectedDecoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-          ).animate().fade().slideY(begin: -0.1),
-          Expanded(
-            child: selectedBlocks.isEmpty
-                ? Center(child: const Text('No blocks scheduled.').animate().fade())
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: selectedBlocks.length,
-                    itemBuilder: (context, index) {
-                      final block = selectedBlocks[index];
-                      return _buildTimeBlockTile(block).animate().fade(duration: (200 + (index * 100)).ms).slideY(begin: 0.2, end: 0);
-                    },
+                calendarStyle: CalendarStyle(
+                  todayDecoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor.withOpacity(0.5),
+                    shape: BoxShape.circle,
                   ),
-          ),
-        ],
+                  selectedDecoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            ).animate().fade().slideY(begin: -0.1),
+            Expanded(
+              child: selectedBlocks.isEmpty
+                  ? Center(child: const Text('No blocks scheduled.').animate().fade())
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: selectedBlocks.length,
+                      itemBuilder: (context, index) {
+                        final block = selectedBlocks[index];
+                        return _buildTimeBlockTile(block).animate().fade(duration: (200 + (index * 100)).ms).slideY(begin: 0.2, end: 0);
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddEditBlockModal(context, ref),
@@ -138,14 +140,18 @@ class _ScheduleAlarmsState extends ConsumerState<ScheduleAlarms> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        return Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-          ),
+        return Padding(
           padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-          child: _AddEditBlockForm(block: block, initialDate: _selectedDay ?? DateTime.now()),
-        ).animate().slideY(begin: 1.0, end: 0, duration: 300.ms, curve: Curves.easeOutCubic);
+          child: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+            ),
+            child: SingleChildScrollView(
+              child: _AddEditBlockForm(block: block, initialDate: _selectedDay ?? DateTime.now()),
+            ),
+          ).animate().slideY(begin: 1.0, end: 0, duration: 300.ms, curve: Curves.easeOutCubic),
+        );
       },
     );
   }
@@ -177,101 +183,95 @@ class _AddEditBlockFormState extends ConsumerState<_AddEditBlockForm> {
 
   @override
   Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      initialChildSize: 0.9,
-      minChildSize: 0.5,
-      maxChildSize: 0.95,
-      expand: false,
-      builder: (_, controller) {
-        return ListView(
-          padding: const EdgeInsets.all(32.0),
-          controller: controller,
-          children: [
-            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(2)))),
-            const SizedBox(height: 32),
-            Text(widget.block == null ? 'New Schedule' : 'Edit Schedule', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 24),
-            TextField(
-              controller: _titleController,
-              decoration: InputDecoration(labelText: 'Task Title', border: OutlineInputBorder(borderRadius: BorderRadius.circular(16))),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: ListTile(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Colors.white24)),
-                    title: const Text('Start'),
-                    subtitle: Text(_startTime.format(context), style: const TextStyle(fontWeight: FontWeight.bold)),
-                    onTap: () async {
-                      final time = await showTimePicker(context: context, initialTime: _startTime);
-                      if (time != null) setState(() => _startTime = time);
-                    },
-                  ),
+    return Padding(
+      padding: const EdgeInsets.all(32.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(2)))),
+          const SizedBox(height: 32),
+          Text(widget.block == null ? 'New Schedule' : 'Edit Schedule', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+          const SizedBox(height: 24),
+          TextField(
+            controller: _titleController,
+            decoration: InputDecoration(labelText: 'Task Title', border: OutlineInputBorder(borderRadius: BorderRadius.circular(16))),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: ListTile(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Colors.white24)),
+                  title: const Text('Start'),
+                  subtitle: Text(_startTime.format(context), style: const TextStyle(fontWeight: FontWeight.bold)),
+                  onTap: () async {
+                    final time = await showTimePicker(context: context, initialTime: _startTime);
+                    if (time != null) setState(() => _startTime = time);
+                  },
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ListTile(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Colors.white24)),
-                    title: const Text('End'),
-                    subtitle: Text(_endTime.format(context), style: const TextStyle(fontWeight: FontWeight.bold)),
-                    onTap: () async {
-                      final time = await showTimePicker(context: context, initialTime: _endTime);
-                      if (time != null) setState(() => _endTime = time);
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<Recurrence>(
-              value: _recurrence,
-              items: Recurrence.values.map((r) => DropdownMenuItem(value: r, child: Text(r.name.toUpperCase()))).toList(),
-              onChanged: (v) => setState(() => _recurrence = v!),
-              decoration: InputDecoration(labelText: 'Recurrence', border: OutlineInputBorder(borderRadius: BorderRadius.circular(16))),
-            ),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).primaryColor,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
-                onPressed: () {
-                  final title = _titleController.text.trim();
-                  if (title.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Task Title cannot be empty')));
-                    return;
-                  }
-                  final sDateTime = DateTime(widget.initialDate.year, widget.initialDate.month, widget.initialDate.day, _startTime.hour, _startTime.minute);
-                  final eDateTime = DateTime(widget.initialDate.year, widget.initialDate.month, widget.initialDate.day, _endTime.hour, _endTime.minute);
-                  
-                  final newBlock = TimeBlock(
-                    id: widget.block?.id,
-                    title: title,
-                    startTime: sDateTime,
-                    endTime: eDateTime,
-                    colorTag: '#FF00FFCC', // Default cyan for simplicity
-                    recurrence: _recurrence,
-                    remindersEnabled: widget.block?.remindersEnabled ?? true,
-                  );
-
-                  if (widget.block == null) {
-                    ref.read(timeBlocksProvider.notifier).addBlock(newBlock);
-                  } else {
-                    ref.read(timeBlocksProvider.notifier).updateBlock(newBlock);
-                  }
-                  Navigator.pop(context);
-                },
-                child: const Text('Save Block', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               ),
-            )
-          ],
-        );
-      },
+              const SizedBox(width: 16),
+              Expanded(
+                child: ListTile(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Colors.white24)),
+                  title: const Text('End'),
+                  subtitle: Text(_endTime.format(context), style: const TextStyle(fontWeight: FontWeight.bold)),
+                  onTap: () async {
+                    final time = await showTimePicker(context: context, initialTime: _endTime);
+                    if (time != null) setState(() => _endTime = time);
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<Recurrence>(
+            value: _recurrence,
+            items: Recurrence.values.map((r) => DropdownMenuItem(value: r, child: Text(r.name.toUpperCase()))).toList(),
+            onChanged: (v) => setState(() => _recurrence = v!),
+            decoration: InputDecoration(labelText: 'Recurrence', border: OutlineInputBorder(borderRadius: BorderRadius.circular(16))),
+          ),
+          const SizedBox(height: 32),
+          SizedBox(
+            height: 56,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              onPressed: () {
+                final title = _titleController.text.trim();
+                if (title.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Task Title cannot be empty')));
+                  return;
+                }
+                final sDateTime = DateTime(widget.initialDate.year, widget.initialDate.month, widget.initialDate.day, _startTime.hour, _startTime.minute);
+                final eDateTime = DateTime(widget.initialDate.year, widget.initialDate.month, widget.initialDate.day, _endTime.hour, _endTime.minute);
+                
+                final newBlock = TimeBlock(
+                  id: widget.block?.id,
+                  title: title,
+                  startTime: sDateTime,
+                  endTime: eDateTime,
+                  colorTag: '#FF00FFCC', // Default cyan for simplicity
+                  recurrence: _recurrence,
+                  remindersEnabled: widget.block?.remindersEnabled ?? true,
+                );
+
+                if (widget.block == null) {
+                  ref.read(timeBlocksProvider.notifier).addBlock(newBlock);
+                } else {
+                  ref.read(timeBlocksProvider.notifier).updateBlock(newBlock);
+                }
+                Navigator.pop(context);
+              },
+              child: const Text('Save Block', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            ),
+          )
+        ],
+      ),
     );
   }
 }
