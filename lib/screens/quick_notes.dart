@@ -142,7 +142,7 @@ class _QuickNotesState extends ConsumerState<QuickNotes> {
                   Navigator.pop(context);
                   final jsonStr = ref.read(storageServiceProvider).exportData();
                   final dir = await getApplicationDocumentsDirectory();
-                  final file = File('\${dir.path}/zenith_export.json');
+                  final file = File('${dir.path}/zenith_export.json');
                   await file.writeAsString(jsonStr);
                   await Share.shareXFiles([XFile(file.path)], text: 'Zenith Creator Hub Backup');
                 },

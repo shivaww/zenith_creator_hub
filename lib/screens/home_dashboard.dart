@@ -67,7 +67,7 @@ class HomeDashboard extends ConsumerWidget {
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerRight,
                           child: Text(
-                            '₹\${NumberFormat.decimalPattern().format(totalEarningsThisWeek)}',
+                            '₹${NumberFormat.decimalPattern().format(totalEarningsThisWeek)}',
                             style: const TextStyle(
                               fontSize: 32,
                               fontWeight: FontWeight.bold,
@@ -137,7 +137,7 @@ class HomeDashboard extends ConsumerWidget {
           ),
         ),
         title: Text(block.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text('\${DateFormat.jm().format(block.startTime)} - \${DateFormat.jm().format(block.endTime)}'),
+        subtitle: Text('${DateFormat.jm().format(block.startTime)} - ${DateFormat.jm().format(block.endTime)}'),
       ),
     );
   }
@@ -171,10 +171,10 @@ class HomeDashboard extends ConsumerWidget {
                   children: [
                     Icon(Icons.payment, size: 14, color: project.paymentStatus == PaymentStatus.completed ? Colors.green : Colors.orange),
                     const SizedBox(width: 4),
-                    Text('₹\${project.paymentAmount.toStringAsFixed(0)}', style: Theme.of(context).textTheme.bodyMedium),
+                    Text('₹${project.paymentAmount.toStringAsFixed(0)}', style: Theme.of(context).textTheme.bodyMedium),
                   ],
                 ),
-                Text('Due: \${DateFormat.yMMMd().format(project.deadline)}', style: Theme.of(context).textTheme.bodyMedium),
+                Text('Due: ${DateFormat.yMMMd().format(project.deadline)}', style: Theme.of(context).textTheme.bodyMedium),
               ],
             ),
           ],

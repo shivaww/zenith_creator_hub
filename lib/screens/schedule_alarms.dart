@@ -120,7 +120,7 @@ class _ScheduleAlarmsState extends ConsumerState<ScheduleAlarms> {
             ),
           ),
           title: Text(block.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-          subtitle: Text('\${DateFormat.jm().format(block.startTime)} - \${DateFormat.jm().format(block.endTime)} \nRepeat: \${block.recurrence.name.toUpperCase()}'),
+          subtitle: Text('${DateFormat.jm().format(block.startTime)} - ${DateFormat.jm().format(block.endTime)} \nRepeat: ${block.recurrence.name.toUpperCase()}'),
           trailing: Switch(
             value: block.remindersEnabled,
             onChanged: (val) {

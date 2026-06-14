@@ -102,12 +102,12 @@ class ProjectManager extends ConsumerWidget {
                     Icon(Icons.payment, size: 16, color: project.paymentStatus == PaymentStatus.completed ? Colors.green : Colors.orange),
                     const SizedBox(width: 4),
                     Text(
-                      '₹\${project.paymentAmount.toStringAsFixed(0)}',
+                      '₹${project.paymentAmount.toStringAsFixed(0)}',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
-                Text('Due: \${DateFormat.MMMEd().format(project.deadline)}', style: Theme.of(context).textTheme.bodyMedium),
+                Text('Due: ${DateFormat.MMMEd().format(project.deadline)}', style: Theme.of(context).textTheme.bodyMedium),
               ],
             ),
             if (project.scriptFilePath != null || project.researchFilePaths.isNotEmpty) ...[
@@ -118,7 +118,7 @@ class ProjectManager extends ConsumerWidget {
                   if (project.scriptFilePath != null)
                     Row(mainAxisSize: MainAxisSize.min, children: const [Icon(Icons.description, size: 16, color: Colors.blue)]),
                   if (project.researchFilePaths.isNotEmpty)
-                    Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.folder_shared, size: 16, color: Colors.orange), const SizedBox(width: 4), Text('\${project.researchFilePaths.length}', style: const TextStyle(fontSize: 12))]),
+                    Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.folder_shared, size: 16, color: Colors.orange), const SizedBox(width: 4), Text('${project.researchFilePaths.length}', style: const TextStyle(fontSize: 12))]),
                 ],
               )
             ]
@@ -280,7 +280,7 @@ class _AddEditProjectFormState extends ConsumerState<_AddEditProjectForm> {
           ListTile(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: const BorderSide(color: Colors.white24)),
             leading: const Icon(Icons.folder_shared, color: Colors.orange),
-            title: Text('\${_researchFiles.length} Research Files'),
+            title: Text('${_researchFiles.length} Research Files'),
             trailing: IconButton(icon: const Icon(Icons.add), onPressed: _pickResearchFiles),
           ),
           if (_researchFiles.isNotEmpty)

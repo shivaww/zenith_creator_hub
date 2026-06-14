@@ -63,7 +63,7 @@ class EarningsTracker extends ConsumerWidget {
                   FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
-                      '₹\${NumberFormat.decimalPattern().format(totalEarnings)}',
+                      '₹${NumberFormat.decimalPattern().format(totalEarnings)}',
                       style: const TextStyle(
                         fontSize: 48,
                         fontWeight: FontWeight.bold,
@@ -143,7 +143,7 @@ class EarningsTracker extends ConsumerWidget {
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerRight,
-                      child: Text('₹\${NumberFormat.decimalPattern().format(e.amount)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                      child: Text('₹${NumberFormat.decimalPattern().format(e.amount)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                     ),
                   ),
                 ),
