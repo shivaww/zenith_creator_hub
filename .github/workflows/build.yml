@@ -32,11 +32,17 @@ jobs:
       - name: Add Android Permissions
         run: |
           MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
-          PERMISSIONS="<uses-permission android:name=\"android.permission.RECEIVE_BOOT_COMPLETED\"/>\n    <uses-permission android:name=\"android.permission.POST_NOTIFICATIONS\"/>\n    <uses-permission android:name=\"android.permission.SCHEDULE_EXACT_ALARM\"/>\n    <uses-permission android:name=\"android.permission.USE_EXACT_ALARM\"/>\n    <uses-permission android:name=\"android.permission.WAKE_LOCK\"/>"
+          
+          # Add permissions
+          PERMISSIONS="<uses-permission android:name=\"android.permission.RECEIVE_BOOT_COMPLETED\"/>\n    <uses-permission android:name=\"android.permission.POST_NOTIFICATIONS\"/>\n    <uses-permission android:name=\"android.permission.SCHEDULE_EXACT_ALARM\"/>\n    <uses-permission android:name=\"android.permission.USE_EXACT_ALARM\"/>\n    <uses-permission android:name=\"android.permission.WAKE_LOCK\"/>\n    <uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\"/>\n    <uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\"/>"
           sed -i -e "s|<application|$PERMISSIONS\n    <application|g" $MANIFEST_PATH
           
-          # Add boot receiver for flutter_local_notifications inside <application>
-          RECEIVER="<receiver android:exported=\"false\" android:name=\"com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver\" />\n        <receiver android:exported=\"false\" android:name=\"com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver\">\n            <intent-filter>\n                <action android:name=\"android.intent.action.BOOT_COMPLETED\"/>\n                <action android:name=\"android.intent.action.MY_PACKAGE_REPLACED\"/>\n                <action android:name=\"android.intent.action.QUICKBOOT_POWERON\" />\n                <action android:name=\"com.htc.intent.action.QUICKBOOT_POWERON\"/>\n            </intent-filter>\n        </receiver>"
+          # Add queries for OpenFilex (Android 11+)
+          QUERIES="<queries>\n        <intent>\n            <action android:name=\"android.intent.action.VIEW\" />\n            <data android:mimeType=\"*/*\" />\n        </intent>\n    </queries>"
+          sed -i -e "s|<manifest| $QUERIES\n<manifest|g" $MANIFEST_PATH
+
+          # Add boot receiver and FileProvider
+          RECEIVER="<receiver android:exported=\"false\" android:name=\"com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver\" />\n        <receiver android:exported=\"false\" android:name=\"com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver\">\n            <intent-filter>\n                <action android:name=\"android.intent.action.BOOT_COMPLETED\"/>\n                <action android:name=\"android.intent.action.MY_PACKAGE_REPLACED\"/>\n                <action android:name=\"android.intent.action.QUICKBOOT_POWERON\" />\n                <action android:name=\"com.htc.intent.action.QUICKBOOT_POWERON\"/>\n            </intent-filter>\n        </receiver>\n        <provider android:name=\"com.vincent.filepicker.FileProvider\" android:authorities=\"\${applicationId}.provider\" android:exported=\"false\" android:grantUriPermissions=\"true\">\n            <meta-data android:name=\"android.support.FILE_PROVIDER_PATHS\" android:resource=\"@xml/file_paths\" />\n        </provider>"
           sed -i -e "s|</activity>|</activity>\n        $RECEIVER|g" $MANIFEST_PATH
 
       - name: Get Dependencies

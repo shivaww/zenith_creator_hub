@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:open_filex/open_filex.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/providers.dart';
 import '../models/models.dart';
@@ -11,7 +12,7 @@ class ProjectManager extends ConsumerWidget {
   const ProjectManager({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final projects = ref.watch(projectsProvider);
 
     return Scaffold(
@@ -116,7 +117,7 @@ class ProjectManager extends ConsumerWidget {
                 spacing: 16,
                 children: [
                   if (project.scriptFilePath != null)
-                    Row(mainAxisSize: MainAxisSize.min, children: const [Icon(Icons.description, size: 16, color: Colors.blue)]),
+                    const Icon(Icons.description, size: 16, color: Colors.blue),
                   if (project.researchFilePaths.isNotEmpty)
                     Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.folder_shared, size: 16, color: Colors.orange), const SizedBox(width: 4), Text('${project.researchFilePaths.length}', style: const TextStyle(fontSize: 12))]),
                 ],
@@ -179,6 +180,14 @@ class _AddEditProjectFormState extends ConsumerState<_AddEditProjectForm> {
     _deadline = widget.project?.deadline ?? DateTime.now().add(const Duration(days: 7));
     _scriptFile = widget.project?.scriptFilePath;
     _researchFiles = List.from(widget.project?.researchFilePaths ?? []);
+  }
+
+  Future<void> _handleFileOpen(String path) async {
+    final result = await OpenFilex.open(path);
+    if (result.type != ResultType.done) {
+      // Fallback: Use share to allow user to open with any app
+      await Share.shareXFiles([XFile(path)], text: 'Open Project File');
+    }
   }
 
   Future<void> _pickScriptFile() async {
@@ -260,7 +269,7 @@ class _AddEditProjectFormState extends ConsumerState<_AddEditProjectForm> {
             },
           ),
           const Divider(height: 32),
-          Text('Files & Assets', style: Theme.of(context).textTheme.titleMedium),
+          Text('Files & Assets (Tap icon to Open in External Apps)', style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Theme.of(context).primaryColor)),
           const SizedBox(height: 16),
           // Script File
           ListTile(
@@ -270,7 +279,7 @@ class _AddEditProjectFormState extends ConsumerState<_AddEditProjectForm> {
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (_scriptFile != null) IconButton(icon: const Icon(Icons.open_in_new), onPressed: () => OpenFilex.open(_scriptFile!)),
+                if (_scriptFile != null) IconButton(icon: const Icon(Icons.open_in_new), onPressed: () => _handleFileOpen(_scriptFile!)),
                 IconButton(icon: const Icon(Icons.attach_file), onPressed: _pickScriptFile),
               ],
             ),
@@ -290,7 +299,7 @@ class _AddEditProjectFormState extends ConsumerState<_AddEditProjectForm> {
                 children: _researchFiles.map((f) => Row(
                   children: [
                     Expanded(child: Text(f.split('/').last, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12))),
-                    IconButton(icon: const Icon(Icons.open_in_new, size: 16), onPressed: () => OpenFilex.open(f)),
+                    IconButton(icon: const Icon(Icons.open_in_new, size: 16), onPressed: () => _handleFileOpen(f)),
                     IconButton(icon: const Icon(Icons.close, size: 16, color: Colors.red), onPressed: () => setState(() => _researchFiles.remove(f))),
                   ],
                 )).toList(),

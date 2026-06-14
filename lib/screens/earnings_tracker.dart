@@ -7,150 +7,228 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/providers.dart';
 import '../models/models.dart';
 
-class EarningsTracker extends ConsumerWidget {
+enum EarningsFilter { today, week, month, year, lifetime }
+
+class EarningsTracker extends ConsumerStatefulWidget {
   const EarningsTracker({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final earnings = ref.watch(earningsProvider);
+  ConsumerState<EarningsTracker> createState() => _EarningsTrackerState();
+}
 
-    final totalEarnings = earnings.fold(0.0, (sum, e) => sum + e.amount);
-    
-    // Group by month
+class _EarningsTrackerState extends ConsumerState<EarningsTracker> {
+  EarningsFilter _currentFilter = EarningsFilter.lifetime;
+
+  @override
+  Widget build(BuildContext context) {
+    final earnings = ref.watch(earningsProvider);
+    final now = DateTime.now();
+
+    final filteredEarnings = earnings.where((e) {
+      switch (_currentFilter) {
+        case EarningsFilter.today:
+          return isSameDay(e.date, now);
+        case EarningsFilter.week:
+          return e.date.isAfter(now.subtract(const Duration(days: 7)));
+        case EarningsFilter.month:
+          return e.date.year == now.year && e.date.month == now.month;
+        case EarningsFilter.year:
+          return e.date.year == now.year;
+        case EarningsFilter.lifetime:
+          return true;
+      }
+    }).toList();
+
+    final totalAmount = filteredEarnings.fold(0.0, (sum, e) => sum + e.amount);
+
+    // Grouping for chart (always show by month for historical view)
     final grouped = groupBy(earnings, (Earning e) => DateTime(e.date.year, e.date.month));
     final sortedKeys = grouped.keys.toList()..sort();
     
     List<BarChartGroupData> barGroups = [];
-    int x = 0;
-    for (var key in sortedKeys) {
+    double maxY = 0;
+    for (int i = 0; i < sortedKeys.length; i++) {
+      final key = sortedKeys[i];
       final monthEarnings = grouped[key]!.fold(0.0, (sum, e) => sum + e.amount);
+      if (monthEarnings > maxY) maxY = monthEarnings;
+      
       barGroups.add(
         BarChartGroupData(
-          x: x,
+          x: i,
           barRods: [
             BarChartRodData(
               toY: monthEarnings,
               color: Theme.of(context).primaryColor,
-              width: 20,
-              borderRadius: BorderRadius.circular(6),
+              width: 22,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+              backDrawRodData: BackgroundBarChartRodData(show: true, toY: maxY > 0 ? maxY : 100, color: Colors.white10),
             )
           ],
+          showingTooltipIndicators: [0],
         ),
       );
-      x++;
     }
 
     return Scaffold(
       appBar: AppBar(title: const Text('Earnings Tracker')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Card(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Theme.of(context).colorScheme.secondary, Theme.of(context).primaryColor],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(24),
-              ),
-              padding: const EdgeInsets.all(32.0),
-              child: Column(
-                children: [
-                  const Text('All Time Earnings', style: TextStyle(fontSize: 18, color: Colors.white70)),
-                  const SizedBox(height: 8),
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      '₹${NumberFormat.decimalPattern().format(totalEarnings)}',
-                      style: const TextStyle(
-                        fontSize: 48,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            // Filter Selector
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: EarningsFilter.values.map((filter) {
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: ChoiceChip(
+                      label: Text(filter.name.toUpperCase()),
+                      selected: _currentFilter == filter,
+                      onSelected: (val) {
+                        if (val) setState(() => _currentFilter = filter);
+                      },
+                      selectedColor: Theme.of(context).primaryColor,
                     ),
-                  ),
-                ],
+                  );
+                }).toList(),
               ),
-            ),
-          ).animate().fade().scale(curve: Curves.easeOutBack),
-          
-          const SizedBox(height: 32),
-          const Text('Income Over Time', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)).animate().fade(delay: 200.ms).slideX(),
-          const SizedBox(height: 24),
-          if (barGroups.isNotEmpty)
-            SizedBox(
-              height: 250,
-              child: BarChart(
-                BarChartData(
-                  barGroups: barGroups,
-                  borderData: FlBorderData(show: false),
-                  gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (value) => FlLine(color: Colors.white12, strokeWidth: 1)),
-                  titlesData: FlTitlesData(
-                    leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 32,
-                        getTitlesWidget: (value, meta) {
-                          if (value.toInt() >= 0 && value.toInt() < sortedKeys.length) {
-                            return Padding(
-                              padding: const EdgeInsets.only(top: 8.0),
-                              child: Text(DateFormat.MMM().format(sortedKeys[value.toInt()]), style: const TextStyle(fontWeight: FontWeight.bold)),
-                            );
-                          }
-                          return const Text('');
-                        },
-                      ),
-                    ),
+            ).animate().fade().slideY(begin: -0.2),
+            
+            const SizedBox(height: 24),
+            
+            // Total Card
+            Card(
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Theme.of(context).colorScheme.secondary, Theme.of(context).primaryColor],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
+                  borderRadius: BorderRadius.circular(24),
                 ),
-              ),
-            ).animate().fade(delay: 300.ms).slideY(begin: 0.2)
-          else
-            const Center(child: Text('No data for chart.')).animate().fade(delay: 300.ms),
-          
-          const SizedBox(height: 32),
-          const Text('Recent Entries', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)).animate().fade(delay: 400.ms).slideX(),
-          const SizedBox(height: 16),
-          ...earnings.reversed.take(10).toList().asMap().entries.map((entry) {
-            int idx = entry.key;
-            Earning e = entry.value;
-            return Dismissible(
-              key: Key(e.id),
-              background: Container(
-                decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(16)),
-                alignment: Alignment.centerRight,
-                padding: const EdgeInsets.only(right: 24),
-                child: const Icon(Icons.delete, color: Colors.white),
-              ),
-              onDismissed: (_) {
-                ref.read(earningsProvider.notifier).removeEarning(e.id);
-              },
-              child: Card(
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                  leading: CircleAvatar(backgroundColor: Theme.of(context).primaryColor.withOpacity(0.2), child: Icon(Icons.arrow_downward, color: Theme.of(context).colorScheme.tertiary)),
-                  title: Text(e.source, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text(DateFormat.yMMMd().format(e.date)),
-                  trailing: SizedBox(
-                    width: 120,
-                    child: FittedBox(
+                padding: const EdgeInsets.all(32.0),
+                child: Column(
+                  children: [
+                    Text('${_currentFilter.name.toUpperCase()} EARNINGS', style: const TextStyle(fontSize: 14, color: Colors.white70, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                    const SizedBox(height: 12),
+                    FittedBox(
                       fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerRight,
-                      child: Text('₹${NumberFormat.decimalPattern().format(e.amount)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                      child: Text(
+                        '₹${NumberFormat.decimalPattern().format(totalAmount)}',
+                        style: const TextStyle(
+                          fontSize: 48,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ).animate().fade(delay: 100.ms).scale(curve: Curves.easeOutBack),
+            
+            const SizedBox(height: 32),
+            const Text('Revenue History', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)).animate().fade(delay: 200.ms).slideX(),
+            const SizedBox(height: 24),
+            
+            // Chart with Horizontal Scroll for previous months
+            if (barGroups.isNotEmpty)
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Container(
+                  width: sortedKeys.length * 80.0 > MediaQuery.of(context).size.width ? sortedKeys.length * 80.0 : MediaQuery.of(context).size.width,
+                  height: 300,
+                  padding: const EdgeInsets.only(top: 20, right: 16),
+                  child: BarChart(
+                    BarChartData(
+                      maxY: maxY * 1.2,
+                      barGroups: barGroups,
+                      barTouchData: BarTouchData(
+                        enabled: false,
+                        touchTooltipData: BarTouchTooltipData(
+                          getTooltipColor: (_) => Colors.transparent,
+                          tooltipPadding: EdgeInsets.zero,
+                          tooltipMargin: 8,
+                          getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                            return BarTooltipItem(
+                              '₹${NumberFormat.compact().format(rod.toY)}',
+                              const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10),
+                            );
+                          },
+                        ),
+                      ),
+                      borderData: FlBorderData(show: false),
+                      gridData: const FlGridData(show: false),
+                      titlesData: FlTitlesData(
+                        leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 32,
+                            getTitlesWidget: (value, meta) {
+                              if (value.toInt() >= 0 && value.toInt() < sortedKeys.length) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 8.0),
+                                  child: Text(DateFormat.MMM().format(sortedKeys[value.toInt()]), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10)),
+                                );
+                              }
+                              return const Text('');
+                            },
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ).animate().fade(delay: (500 + (idx * 100)).ms).slideY(begin: 0.2);
-          }),
-        ],
+              ).animate().fade(delay: 300.ms).slideY(begin: 0.1)
+            else
+              const Center(child: Text('No historical data available.')).animate().fade(delay: 300.ms),
+            
+            const SizedBox(height: 32),
+            const Text('Recent Transactions', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)).animate().fade(delay: 400.ms).slideX(),
+            const SizedBox(height: 16),
+            ...filteredEarnings.reversed.take(15).toList().asMap().entries.map((entry) {
+              int idx = entry.key;
+              Earning e = entry.value;
+              return Dismissible(
+                key: Key(e.id),
+                background: Container(
+                  decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(16)),
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 24),
+                  child: const Icon(Icons.delete, color: Colors.white),
+                ),
+                onDismissed: (_) {
+                  ref.read(earningsProvider.notifier).removeEarning(e.id);
+                },
+                child: Card(
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                    leading: CircleAvatar(backgroundColor: Theme.of(context).primaryColor.withOpacity(0.2), child: const Icon(Icons.arrow_downward, color: Colors.green)),
+                    title: Text(e.source, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(DateFormat.yMMMd().format(e.date)),
+                    trailing: SizedBox(
+                      width: 100,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerRight,
+                        child: Text('₹${NumberFormat.decimalPattern().format(e.amount)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                      ),
+                    ),
+                  ),
+                ),
+              ).animate().fade(delay: (500 + (idx * 50)).ms).slideX(begin: 0.1);
+            }),
+            const SizedBox(height: 80),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddEarningModal(context, ref),
@@ -159,19 +237,25 @@ class EarningsTracker extends ConsumerWidget {
     );
   }
 
+  bool isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
   void _showAddEarningModal(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        return Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-          ),
+        return Padding(
           padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-          child: const _AddEarningForm(),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+            ),
+            child: const _AddEarningForm(),
+          ),
         ).animate().slideY(begin: 1.0, end: 0, duration: 300.ms, curve: Curves.easeOutCubic);
       },
     );
@@ -199,10 +283,11 @@ class _AddEarningFormState extends ConsumerState<_AddEarningForm> {
         children: [
           Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(2)))),
           const SizedBox(height: 32),
-          const Text('Add Earning', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          const Text('New Entry', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
           const SizedBox(height: 24),
           TextField(
             controller: _amountController,
+            autofocus: true,
             decoration: InputDecoration(
               labelText: 'Amount (₹)',
               prefixText: '₹ ',
@@ -215,14 +300,14 @@ class _AddEarningFormState extends ConsumerState<_AddEarningForm> {
           TextField(
             controller: _sourceController,
             decoration: InputDecoration(
-              labelText: 'Source (e.g. YouTube Ads)',
+              labelText: 'Source Name',
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
             ),
           ),
           const SizedBox(height: 24),
           ListTile(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Colors.white24)),
-            title: const Text('Date'),
+            title: const Text('Transaction Date'),
             subtitle: Text(DateFormat.yMMMd().format(_date)),
             trailing: const Icon(Icons.calendar_today),
             onTap: () async {
@@ -248,10 +333,10 @@ class _AddEarningFormState extends ConsumerState<_AddEarningForm> {
                   ref.read(earningsProvider.notifier).addEarning(Earning(amount: amount, source: source, date: _date));
                   Navigator.pop(context);
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter a valid amount and source')));
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter a valid amount and source')));
                 }
               },
-              child: const Text('Save Earning', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              child: const Text('Save Transaction', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             ),
           )
         ],
